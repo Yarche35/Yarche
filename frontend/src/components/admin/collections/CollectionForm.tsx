@@ -6,6 +6,11 @@ import { X, Tag, Link2, FileText, Hash, Star, Eye } from "lucide-react";
 import { toast } from "sonner";
 import ImageUploader from "@/src/components/admin/ImageUploader";
 
+type ExistingImage = {
+  url: string;
+  public_id: string;
+};
+
 export default function CollectionForm({
   open,
   setOpen,
@@ -22,23 +27,28 @@ export default function CollectionForm({
   });
 
   const [images, setImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+ const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
 
   // ---------------- EDIT MODE ----------------
-  useEffect(() => {
-    if (editData) {
-      setForm({
-        name: editData.name || "",
-        slug: editData.slug || "",
-        description: editData.description || "",
-        isActive: Boolean(editData.isActive),
-        isFeatured: Boolean(editData.isFeatured),
-        sortOrder: Number(editData.sortOrder || 0),
-      });
+ useEffect(() => {
+  if (editData) {
+    setForm({
+      name: editData.name || "",
+      slug: editData.slug || "",
+      description: editData.description || "",
+      isActive: Boolean(editData.isActive),
+      isFeatured: Boolean(editData.isFeatured),
+      sortOrder: Number(editData.sortOrder || 0),
+    });
 
-      setExistingImages(editData.images || []);
-    }
-  }, [editData]);
+    setExistingImages(
+      (editData.images || []).map((img: string) => ({
+        url: img,
+        public_id: "", // safe fallback (required by type)
+      }))
+    );
+  }
+}, [editData]);
 
   // ---------------- SLUG GENERATOR ----------------
   const handleName = (value: string) => {
@@ -100,7 +110,7 @@ export default function CollectionForm({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      
+
       {/* MODAL */}
       <div className="w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 space-y-5"
         style={{ backgroundColor: "#fff6e2" }}
@@ -108,7 +118,7 @@ export default function CollectionForm({
 
         {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold flex items-center gap-2 text-[#28170D]">
+          <h2 className="text-xl font-semibold flex items-center gap-2 text-foreground">
             <Tag size={18} />
             {editData ? "Edit Collection" : "Create Collection"}
           </h2>

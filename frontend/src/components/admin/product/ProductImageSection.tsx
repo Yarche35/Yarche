@@ -1,16 +1,15 @@
 "use client";
 
 import ImageUploader from "@/src/components/admin/ImageUploader";
+import type { ImageType } from "./types";
 
 type Props = {
   images: File[];
-  setImages: React.Dispatch<
-    React.SetStateAction<File[]>
-  >;
+  setImages: React.Dispatch<React.SetStateAction<File[]>>;
 
-  existingImages: string[];
+  existingImages: ImageType[];
   setExistingImages: React.Dispatch<
-    React.SetStateAction<string[]>
+    React.SetStateAction<ImageType[]>
   >;
 };
 
@@ -23,7 +22,7 @@ export default function ProductImageSection({
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#28170D]">
+        <h2 className="text-xl font-semibold text-foreground">
           Product Images
         </h2>
 
@@ -37,9 +36,7 @@ export default function ProductImageSection({
         images={images}
         setImages={setImages}
         existingImages={existingImages}
-        setExistingImages={
-          setExistingImages
-        }
+        setExistingImages={setExistingImages}
       />
     </div>
   );

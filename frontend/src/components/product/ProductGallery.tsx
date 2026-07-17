@@ -7,14 +7,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const IMAGE_BASE = process.env.NEXT_PUBLIC_API_URL;
-const getImage = (img: string) => {
-  if (!img) return "/placeholder.png";
+import { getImageUrl } from "@/src/lib/image";
 
-  if (img.startsWith("http")) return img;
-
-  return `${IMAGE_BASE}${img.startsWith("/") ? img : `/${img}`}`;
-};
 
 export default function ProductGallery({
   product,
@@ -23,10 +17,10 @@ export default function ProductGallery({
 }: any) {
   const [index, setIndex] = useState(0);
 
-  const images =
-    selectedVariant?.images?.length > 0
-      ? selectedVariant.images.map(getImage)
-      : product?.images?.map(getImage) || [];
+ const images =
+  selectedVariant?.images?.length > 0
+    ? selectedVariant.images.map(getImageUrl)
+    : product?.images?.map(getImageUrl) || [];
 
   useEffect(() => {
     setIndex(0);
@@ -37,38 +31,32 @@ export default function ProductGallery({
 
       {/* MAIN IMAGE */}
 
-      <div className="w-full overflow-hidden rounded-[24px] md:rounded-[30px] border border-[#28170D]/10 + bg-white">
+      <div className="w-full overflow-hidden rounded-[24px] md:rounded-[30px] border border-[#28170D]/10 bg-[var(--surface)]">
 
-        <div
-          className="
-            relative
-            w-full
-            h-[280px]
-            sm:h-[420px]
-            md:h-[520px]
-            lg:h-[600px]
-            flex
-            items-center
-            justify-center
-            p-4
-            sm:p-6
-            md:p-8
-            overflow-hidden
-          "
-        >
+       <div
+  className="
+    relative
+    w-full
+    aspect-square
+    max-w-[650px]
+    mx-auto
+    overflow-hidden
+    p-4
+  "
+>
           <img
-            src={images[index] || "/placeholder.png"}
-            alt={product?.name}
-            className="
-              max-w-full
-              max-h-full
-              object-contain
-              transition-all
-              duration-500
-              hover:scale-105
-              select-none
-            "
-          />
+  src={images[index] || "/placeholder.png"}
+  alt={product?.name}
+  className="
+    w-full
+    h-full
+    object-contain
+    transition-transform
+    duration-500
+    hover:scale-105
+    select-none
+  "
+/>
 
           {/* Badge */}
 
@@ -78,7 +66,7 @@ export default function ProductGallery({
                 flex
                 items-center
                 gap-2
-                bg-[#28170D]
+                bg-footer
                 text-[#FF6E23]
                 px-3
                 py-2
@@ -116,7 +104,7 @@ export default function ProductGallery({
                   sm:w-11
                   sm:h-11
                   rounded-full
-                  bg-[#28170D]
+                  bg-footer
                   text-white
                   flex
                   items-center
@@ -146,7 +134,7 @@ export default function ProductGallery({
                   sm:w-11
                   sm:h-11
                   rounded-full
-                  bg-[#28170D]
+                  bg-footer
                   text-white
                   flex
                   items-center
@@ -212,105 +200,102 @@ export default function ProductGallery({
 
       {/* VARIANTS */}
 
-      {/* VARIANTS */}
 
-      {product?.variants?.length > 0 && (
-        <div className="bg-[#f5e6c6] border border-[#28170D]/10 rounded-[28px] p-5">
 
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-[#28170D] text-lg">
-              Choose Variant
-            </h3>
+     {product?.variants?.length > 0 && (
+  <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6">
 
-            <span className="text-xs text-[#6b5c50]">
-              {product.variants.length + 1} Options
-            </span>
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h3 className="text-xl font-bold text-[var(--foreground)]">
+          Choose Variant
+        </h3>
+
+        <p className="text-sm text-[var(--text-secondary)] mt-1">
+          Select the option that suits your requirement.
+        </p>
+      </div>
+
+      <span className="rounded-full bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)]">
+        {product.variants.length + 1} Options
+      </span>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      {/* Original */}
+      <button
+        onClick={() => onVariantChange(null)}
+        className={`relative rounded-3xl border-2 p-5 text-left transition-all duration-300 hover:shadow-lg ${
+          !selectedVariant
+            ? "border-[var(--foreground)] bg-[var(--input-bg)]"
+            : "border-[var(--border)] bg-white"
+        }`}
+      >
+        {!selectedVariant && (
+          <div className="absolute top-4 right-4 h-7 w-7 rounded-full bg-[var(--footer)] text-white flex items-center justify-center text-xs">
+            ✓
           </div>
+        )}
 
-          <div className="flex flex-wrap gap-3">
+        <span className="text-xs uppercase tracking-widest text-[var(--text-secondary)]">
+          Default
+        </span>
 
-            {/* ORIGINAL */}
+        <h4 className="mt-2 text-lg font-bold text-[var(--foreground)]">
+          Original Product
+        </h4>
 
-            <button
-              onClick={() => onVariantChange(null)}
-              className={`
-          px-4
-          py-3
-          rounded-2xl
-          border
-          transition-all
-          ${!selectedVariant
-                  ? "bg-[#28170D] text-white border-[#28170D]"
-                  : "bg-white border-[#28170D]/10 text-[#28170D]"
-                }
-        `}
-            >
-              <div className="flex flex-col items-start">
-                <span className="font-bold">
-                  Original
-                </span>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          Main product configuration
+        </p>
+      </button>
 
-                <span className="text-[11px] opacity-70">
-                  Default Product
-                </span>
-              </div>
-            </button>
+      {/* Variant Cards */}
+      {product.variants.map((v: any) => (
+        <button
+          key={v._id}
+          onClick={() => onVariantChange(v)}
+          className={`relative rounded-3xl border-2 p-5 text-left transition-all duration-300 hover:shadow-lg ${
+            selectedVariant?._id === v._id
+              ? "border-[var(--foreground)] bg-[var(--input-bg)]"
+              : "border-[var(--border)] bg-white"
+          }`}
+        >
+          {selectedVariant?._id === v._id && (
+            <div className="absolute top-4 right-4 h-7 w-7 rounded-full bg-[var(--footer)] text-white flex items-center justify-center text-xs">
+              ✓
+            </div>
+          )}
 
-            {/* VARIANTS */}
+          <span className="text-xs uppercase tracking-widest text-[var(--text-secondary)]">
+            Variant
+          </span>
 
-            {product.variants.map((v: any) => (
-              <button
-                key={v._id}
-                onClick={() => onVariantChange(v)}
-                className={`
-            relative
-            px-4
-            py-3
-            rounded-2xl
-            border
-            min-w-[140px]
-            text-left
-            transition-all
-            ${selectedVariant?._id === v._id
-                    ? "bg-[#28170D] text-white border-[#28170D]"
-                    : "bg-white border-[#28170D]/10 text-[#28170D]"
-                  }
-          `}
-              >
-                <div className="flex flex-col">
-                  <span className="font-bold">
-                    {v.title}
-                  </span>
+          <h4 className="mt-2 text-lg font-bold text-[var(--foreground)]">
+            {v.title}
+          </h4>
 
-                  <span className="text-[11px] opacity-70">
-                    Variant
-                  </span>
-                </div>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Click to select this variant
+          </p>
+        </button>
+      ))}
 
-                {selectedVariant?._id === v._id && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#FF6E23] text-white flex items-center justify-center text-xs font-bold">
-                    ✓
-                  </div>
-                )}
-              </button>
-            ))}
+    </div>
 
-          </div>
+    <div className="mt-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] p-4">
+      <p className="text-sm text-[var(--text-secondary)]">
+        Selected Variant
+      </p>
 
-          <div className="mt-4 bg-[#fff3e2] border border-[#28170D]/10 rounded-xl p-3">
-            <span className="text-xs text-[#6b5c50]">
-              Selected:
-            </span>
+      <h4 className="mt-1 text-lg font-bold text-[var(--foreground)]">
+        {selectedVariant ? selectedVariant.title : "Original Product"}
+      </h4>
+    </div>
 
-            <p className="font-bold text-[#28170D] mt-1">
-              {selectedVariant
-                ? selectedVariant.title
-                : "Main Product"}
-            </p>
-          </div>
-
-        </div>
-      )}
+  </div>
+)}
     </div>
   );
 }

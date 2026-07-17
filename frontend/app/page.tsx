@@ -1,3 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import API from "@/src/lib/api";
+
 import FeatureBar from "@/src/components/home/FeatureBar";
 import CollectionTiles from "@/src/components/home/CollectionTiles";
 import Banner from "@/src/components/home/Banner";
@@ -6,18 +12,84 @@ import CraftStory from "@/src/components/home/CraftStory";
 import NewArrivals from "@/src/components/home/NewArrivals";
 import TopProducts from "@/src/components/home/TopProducts";
 import ShopByCategory from "@/src/components/home/ShopByCategory";
+import BannerCard from "@/src/components/home/BannerCard";
+
 
 export default function Home() {
+
+  const [categories, setCategories] = useState<string[]>([]);
+
+
+  useEffect(() => {
+
+    const fetchCategories = async () => {
+
+      try {
+
+        const res = await API.get("/productcategories");
+
+        const data =
+          res.data?.data?.map(
+            (item: any) => item.category
+          ) || [];
+
+
+        setCategories(data);
+
+
+      } catch (error) {
+
+        console.error(
+          "Category Error:",
+          error
+        );
+
+      }
+
+    };
+
+
+    fetchCategories();
+
+  }, []);
+
+
+
   return (
-    <div className="w-full bg-[#FFF6E2] min-h-screen">
-      <FeatureBar />
-      <CollectionTiles />
-      <ShopByCategory/>
-      <TopProducts/>
-      <Banner/>
-      <Bestseller/>
-      <CraftStory/>
-      <NewArrivals/>
+
+    <div className="w-full bg-background min-h-screen">
+
+
+      {/* HERO + CATEGORY SIDEBAR */}
+      <FeatureBar
+        categories={categories}
+      />
+
+      <BannerCard />
+
+
+      <ShopByCategory />
+
+
+      <TopProducts />
+
+
+      <Banner />
+
+
+      <Bestseller />
+
+
+      <NewArrivals />
+
+
+      <CraftStory />
+
+
+      {/* <CollectionTiles /> */}
+
+
     </div>
+
   );
 }

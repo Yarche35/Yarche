@@ -19,6 +19,7 @@ import {
   Star,
   TrendingUp,
   Trophy,
+   CreditCard, 
 } from "lucide-react";
 
 export default function Sidebar({ open, setOpen }: any) {
@@ -44,13 +45,14 @@ export default function Sidebar({ open, setOpen }: any) {
       items: [
         { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
         { name: "Customers", href: "/admin/customers", icon: Users },
-         { name: "Discounts", href: "/admin/discounts", icon: Trophy },
+        { name: "Discounts", href: "/admin/discounts", icon: Trophy },
       ],
     },
     {
       title: "CONTENT",
       items: [
         { name: "Banners", href: "/admin/banners", icon: ImageIcon },
+         { name: "Banner Cards", href: "/admin/bannercard", icon: CreditCard },
         { name: "Settings", href: "/admin/settings", icon: Settings },
       ],
     },
@@ -107,10 +109,9 @@ export default function Sidebar({ open, setOpen }: any) {
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         relative transition
-                        ${
-                          isActive(item.href)
-                            ? "bg-[#fff0d3] text-[#1f130b]"
-                            : "hover:bg-white/10"
+                        ${isActive(item.href)
+                          ? "bg-surface text-[#1f130b]"
+                          : "hover:bg-white/10"
                         }
                       `}
                     >
@@ -152,10 +153,9 @@ export default function Sidebar({ open, setOpen }: any) {
                       onClick={() => setOpen(false)} // ✅ auto close
                       className={`
                         flex items-center gap-2 px-3 py-2 rounded-lg text-sm
-                        ${
-                          isActive(tag.href)
-                            ? "bg-[#fff0d3] text-[#1f130b]"
-                            : "hover:bg-white/10"
+                        ${isActive(tag.href)
+                          ? "bg-surface text-[#1f130b]"
+                          : "hover:bg-white/10"
                         }
                       `}
                     >

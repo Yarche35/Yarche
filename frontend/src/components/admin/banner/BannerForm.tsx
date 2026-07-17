@@ -10,6 +10,8 @@ import {
   FileText,
 } from "lucide-react";
 import BackButton from "@/src/components/admin/BackButton";
+import { compressImage } from "@/src/lib/compressImage";
+import { getImageUrl, ImageType } from "@/src/lib/image";
 
 interface Props {
   open: boolean;
@@ -35,7 +37,21 @@ export default function BannerForm({
   });
 
   const [images, setImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+const [existingImages, setExistingImages] = useState<ImageType[]>([]);
+
+const handleImageChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const files = Array.from(e.target.files || []);
+
+  const compressed = await Promise.all(
+    files.map((file) => compressImage(file) as Promise<File>)
+  );
+
+  setImages((prev) => [...prev, ...compressed]);
+
+  e.target.value = "";
+};
 
   useEffect(() => {
     if (editData) {
@@ -72,6 +88,10 @@ export default function BannerForm({
   const removeExistingImage = (index: number) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const removeNewImage = (index: number) => {
+  setImages((prev) => prev.filter((_, i) => i !== index));
+};
 
   const handleSubmit = async () => {
     try {
@@ -123,14 +143,14 @@ export default function BannerForm({
         <div className="border-b border-[#f2d9a6] px-4 sm:px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <BackButton />
-            <h2 className="text-lg sm:text-xl font-semibold text-[#28170d]">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">
               {editData ? "Update Banner" : "Create Banner"}
             </h2>
           </div>
 
           <button
             onClick={() => setOpen(false)}
-            className="text-[#28170d] text-xl"
+            className="text-foreground text-xl"
           >
             ✕
           </button>
@@ -140,7 +160,7 @@ export default function BannerForm({
         <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 overflow-y-auto flex-1">
 
           {/* TITLE */}
-          <div className="rounded-xl p-3 flex gap-2 items-center bg-[#fff0d3]">
+          <div className="rounded-xl p-3 flex gap-2 items-center bg-surface">
             <Type size={18} />
             <input
               value={form.title}
@@ -151,7 +171,7 @@ export default function BannerForm({
           </div>
 
           {/* CAPTION */}
-          <div className="rounded-xl p-3 flex gap-2 items-center bg-[#fff0d3]">
+          <div className="rounded-xl p-3 flex gap-2 items-center bg-surface">
             <FileText size={18} />
             <input
               value={form.caption}
@@ -162,7 +182,7 @@ export default function BannerForm({
           </div>
 
           {/* BUTTON */}
-          <div className="rounded-xl p-3 flex gap-2 items-center bg-[#fff0d3]">
+          <div className="rounded-xl p-3 flex gap-2 items-center bg-surface">
             <Type size={18} />
             <input
               value={form.buttonText}
@@ -173,7 +193,7 @@ export default function BannerForm({
           </div>
 
           {/* LINK */}
-          <div className="rounded-xl p-3 flex gap-2 items-center bg-[#fff0d3]">
+          <div className="rounded-xl p-3 flex gap-2 items-center bg-surface">
             <LinkIcon size={18} />
             <input
               value={form.link}
@@ -184,7 +204,7 @@ export default function BannerForm({
           </div>
 
           {/* DESCRIPTION */}
-          <div className="col-span-1 sm:col-span-2 rounded-xl p-3 bg-[#fff0d3]">
+          <div className="col-span-1 sm:col-span-2 rounded-xl p-3 bg-surface">
             <div className="flex gap-2 mb-2 items-center text-sm">
               <AlignLeft size={18} />
               <span>Description</span>
@@ -200,8 +220,8 @@ export default function BannerForm({
           </div>
 
           {/* IMAGE UPLOAD */}
-          <div className="col-span-1 sm:col-span-2 rounded-xl p-4 bg-[#fff0d3]">
-            <label className="flex gap-2 items-center mb-3 text-[#28170d] font-medium text-sm">
+          <div className="col-span-1 sm:col-span-2 rounded-xl p-4 bg-surface">
+            <label className="flex gap-2 items-center mb-3 text-foreground font-medium text-sm">
               <ImagePlus size={18} />
               Upload Images
             </label>
@@ -210,7 +230,7 @@ export default function BannerForm({
               multiple
               type="file"
               accept="image/*"
-              onChange={(e) => setImages(Array.from(e.target.files || []))}
+              onChange={handleImageChange}
               className="w-full text-sm"
             />
           </div>
@@ -218,7 +238,7 @@ export default function BannerForm({
           {/* EXISTING IMAGES */}
           {existingImages.length > 0 && (
             <div className="col-span-1 sm:col-span-2">
-              <h3 className="mb-3 font-semibold text-[#28170d] text-sm">
+              <h3 className="mb-3 font-semibold text-foreground text-sm">
                 Existing Images
               </h3>
 
@@ -226,9 +246,9 @@ export default function BannerForm({
                 {existingImages.map((img, index) => (
                   <div key={index} className="relative">
                     <img
-                      src={`http://localhost:5000${img}`}
-                      className="w-full h-20 sm:h-28 object-cover rounded-xl border"
-                    />
+  src={getImageUrl(img)}
+  className="w-full h-20 sm:h-28 object-cover rounded-xl border"
+/>
 
                     <button
                       onClick={() => removeExistingImage(index)}
@@ -245,18 +265,27 @@ export default function BannerForm({
           {/* NEW IMAGES */}
           {images.length > 0 && (
             <div className="col-span-1 sm:col-span-2">
-              <h3 className="mb-3 font-semibold text-[#28170d] text-sm">
+              <h3 className="mb-3 font-semibold text-foreground text-sm">
                 New Images
               </h3>
 
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
-                {images.map((file, index) => (
-                  <img
-                    key={index}
-                    src={URL.createObjectURL(file)}
-                    className="w-full h-20 sm:h-28 object-cover rounded-xl border"
-                  />
-                ))}
+               {images.map((file, index) => (
+  <div key={index} className="relative">
+    <img
+      src={URL.createObjectURL(file)}
+      className="w-full h-20 sm:h-28 object-cover rounded-xl border"
+    />
+
+    <button
+      type="button"
+      onClick={() => removeNewImage(index)}
+      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+    >
+      ×
+    </button>
+  </div>
+))}
               </div>
             </div>
           )}
@@ -281,8 +310,8 @@ export default function BannerForm({
             {loading
               ? "Saving..."
               : editData
-              ? "Update Banner"
-              : "Create Banner"}
+                ? "Update Banner"
+                : "Create Banner"}
           </button>
         </div>
       </div>

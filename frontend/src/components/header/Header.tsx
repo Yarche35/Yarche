@@ -27,7 +27,7 @@ export default function Header() {
   const navLinks = [
     { name: "Best Sellers", href: "/best-sellers" },
     { name: "New Arrivals", href: "/new-arrivals" },
-    { name: "Collections", href: "/collections" },
+    
     { name: "Happy Customers", href: "/customers" },
     { name: "Get Support", href: "/support" },
     { name: "Our Story", href: "/story" },
@@ -44,6 +44,7 @@ export default function Header() {
           ) || [];
 
         setCategories(data);
+
       } catch (error) {
         console.error("Category Error:", error);
       }
@@ -52,36 +53,58 @@ export default function Header() {
     fetchCategories();
   }, []);
 
+
   return (
-    <header className="w-full bg-[#FFF6E2] sticky top-0 z-[1000] border-b border-[#28170D]/10">
-      <div className="max-w-[1440px] mx-auto">
-        <TopBar
-          user={user}
-          logout={logout}
-          cartItems={cartItems}
+    <>
+      <header
+        className="
+          w-full
+          bg-background
+          sticky
+          top-0
+          z-[1000]
+          border-b
+          border-[#28170D]/10
+        "
+      >
+        <div className="max-w-[1440px] mx-auto">
+
+          <TopBar
+            user={user}
+            logout={logout}
+            cartItems={cartItems}
+            setShowSearch={setShowSearch}
+            setIsDrawerOpen={setIsDrawerOpen}
+          />
+
+
+          {/* Navbar only */}
+          <DesktopNav
+  categories={categories}
+  navLinks={navLinks}
+/>
+
+        </div>
+
+
+        <MobileSearch
+          showSearch={showSearch}
           setShowSearch={setShowSearch}
-          setIsDrawerOpen={setIsDrawerOpen}
         />
 
-        <DesktopNav
-          categories={categories}
-          navLinks={navLinks}
-        />
-      </div>
 
-      <MobileSearch
-        showSearch={showSearch}
-        setShowSearch={setShowSearch}
-      />
+       <MobileDrawer
+  user={user}
+  logout={logout}
+  isDrawerOpen={isDrawerOpen}
+  setIsDrawerOpen={setIsDrawerOpen}
+  showCategories={showCategories}
+  setShowCategories={setShowCategories}
+  categories={categories}
+  navLinks={navLinks}
+/>
 
-      <MobileDrawer
-        isDrawerOpen={isDrawerOpen}
-        setIsDrawerOpen={setIsDrawerOpen}
-        showCategories={showCategories}
-        setShowCategories={setShowCategories}
-        categories={categories}
-        navLinks={navLinks}
-      />
-    </header>
+      </header>
+    </>
   );
 }

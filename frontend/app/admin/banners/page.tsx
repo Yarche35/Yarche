@@ -5,6 +5,7 @@ import API from "@/src/lib/api";
 import DataTable from "@/src/components/admin/DataTable";
 import BannerForm from "@/src/components/admin/banner/BannerForm";
 import { ImageIcon } from "lucide-react";
+import { getImageUrl } from "@/src/lib/image";
 
 export default function BannerPage() {
   const [data, setData] = useState<any[]>([]);
@@ -57,12 +58,12 @@ export default function BannerPage() {
       key: "image",
       label: "Image",
       render: (row: any) => (
-        <img
-          src={`http://localhost:5000${row.images?.[0]}`}
-          alt=""
-          className="w-24 h-16 object-cover rounded-lg border"
-        />
-      ),
+  <img
+    src={getImageUrl(row.images?.[0])}
+    alt=""
+    className="w-24 h-16 object-cover rounded-lg border"
+  />
+),
     },
     {
       key: "title",
@@ -97,11 +98,10 @@ export default function BannerPage() {
       label: "Status",
       render: (row: any) => (
         <span
-          className={`px-2 py-1 rounded text-xs ${
-            row.isActive
+          className={`px-2 py-1 rounded text-xs ${row.isActive
               ? "bg-green-100 text-green-700"
               : "bg-red-100 text-red-600"
-          }`}
+            }`}
         >
           {row.isActive ? "Active" : "Inactive"}
         </span>
@@ -115,7 +115,7 @@ export default function BannerPage() {
       style={{ background: "#fff6e2" }}
     >
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-xl font-semibold flex items-center gap-2 text-[#28170d]">
+        <h1 className="text-xl font-semibold flex items-center gap-2 text-foreground">
           <ImageIcon size={20} />
           Banner Management
         </h1>

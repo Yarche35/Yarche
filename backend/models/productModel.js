@@ -34,10 +34,18 @@ const variantSchema = new mongoose.Schema(
       default: "",
     },
 
-    images: {
-      type: [String],
-      default: [],
+    images: [
+  {
+    url: {
+      type: String,
+      required: true,
     },
+    public_id: {
+      type: String,
+      required: true,
+    },
+  },
+],
 
     // NEW
     useProductImages: {
@@ -112,10 +120,18 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
 
-    images: {
-      type: [String],
-      default: [],
+   images: [
+  {
+    url: {
+      type: String,
+      required: true,
     },
+    public_id: {
+      type: String,
+      required: true,
+    },
+  },
+],
 
     variants: {
       type: [variantSchema],

@@ -15,7 +15,9 @@ const Otp = require("../models/otpModel");
 const Founder = require("../models/founderModel");
 const Franchise = require("../models/franchiseModel");
 const { v4: uuidv4 } = require("uuid");
+const Address = require("../models/addressModel");
 const mongoose = require("mongoose");
+const Banner = require("../models/Banner");
 const { getIO } = require("../socket/socket");
 const Notification = require("../models/Notification");
 const Collection = require("../models/CollectionModel");
@@ -114,23 +116,7 @@ const adminLogin = async (req, res) => {
 
 const register = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      mobile,
-      password,
-
-      addressLine,
-      landmark,
-      city,
-      district,
-      state,
-      country,
-      pincode,
-
-      latitude,
-      longitude,
-    } = req.body;
+    const { name, email, mobile, password } = req.body;
 
     const existing = await User.findOne({
       $or: [{ email }, { mobile }],
@@ -148,24 +134,9 @@ const register = async (req, res) => {
       email,
       mobile,
       password,
-
-      address: {
-        addressLine,
-        landmark,
-        city,
-        district,
-        state,
-        country,
-        pincode,
-
-        location: {
-          type: "Point",
-          coordinates: [longitude, latitude],
-        },
-      },
     });
 
-    // 🔔 Create Notification
+    // notification (same as before)
     const notification = await Notification.create({
       title: "New Customer Registered",
       message: `${user.name} has created a new account`,
@@ -179,15 +150,11 @@ const register = async (req, res) => {
       },
     });
 
-    // ⚡ Real Time Socket Emit
     try {
       const io = getIO();
-
       io.emit("new-notification", notification);
-
-      console.log("🔔 New Customer Notification Sent:", user.name);
     } catch (socketError) {
-      console.log("Socket Emit Error:", socketError.message);
+      console.log(socketError.message);
     }
 
     const token = user.generateToken();
@@ -210,6 +177,7 @@ const login = async (req, res) => {
   try {
     const { email, mobile, password } = req.body;
 
+    // validation
     if ((!email && !mobile) || !password) {
       return res.status(400).json({
         response: "failed",
@@ -217,6 +185,7 @@ const login = async (req, res) => {
       });
     }
 
+    // find user
     const user = await User.findOne({
       $or: [
         email ? { email: email.toLowerCase().trim() } : null,
@@ -231,6 +200,7 @@ const login = async (req, res) => {
       });
     }
 
+    // check password
     const isMatch = user.comparePassword(password);
 
     if (!isMatch) {
@@ -240,6 +210,7 @@ const login = async (req, res) => {
       });
     }
 
+    // generate token
     const token = user.generateToken();
 
     return res.status(200).json({
@@ -249,33 +220,225 @@ const login = async (req, res) => {
 
       user: {
         id: user._id,
-
         name: user.name,
         email: user.email,
         mobile: user.mobile,
-
-        addressLine: user.address?.addressLine || "",
-        landmark: user.address?.landmark || "",
-
-        city: user.address?.city || "",
-        district: user.address?.district || "",
-        state: user.address?.state || "",
-        country: user.address?.country || "",
-
-        pincode: user.address?.pincode || "",
-
-        latitude:
-          user.address?.location?.coordinates?.[1] || "",
-
-        longitude:
-          user.address?.location?.coordinates?.[0] || "",
-
         createdAt: user.createdAt,
       },
     });
+
   } catch (err) {
     console.log("LOGIN ERROR:", err);
 
+    return res.status(500).json({
+      response: "failed",
+      message: err.message,
+    });
+  }
+};
+
+const addAddress = async (req, res) => {
+  try {
+    console.log("============== ADD ADDRESS ==============");
+    console.log("USER :", req.user);
+    console.log("BODY :", req.body);
+
+    const userId = req.user.id;
+
+    const {
+      type,
+      name,
+      mobile,
+      email,
+      addressLine,
+      landmark,
+      city,
+      district,
+      state,
+      country,
+      pincode,
+      latitude,
+      longitude,
+    } = req.body;
+
+    // ================= VALIDATION =================
+
+    if (
+      !name ||
+      !mobile ||
+      !email ||
+      !addressLine ||
+      !city ||
+      !state ||
+      !pincode
+    ) {
+      return res.status(400).json({
+        response: "failed",
+        message: "Please fill all required fields",
+      });
+    }
+
+    // Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        response: "failed",
+        message: "Invalid email address",
+      });
+    }
+
+    const address = await Address.create({
+      user: userId,
+
+      type,
+      name,
+      mobile,
+      email,
+
+      addressLine,
+      landmark,
+      city,
+      district,
+      state,
+      country,
+      pincode,
+
+      location: {
+        type: "Point",
+        coordinates: [
+          Number(longitude) || 0,
+          Number(latitude) || 0,
+        ],
+      },
+    });
+
+    return res.status(201).json({
+      response: "success",
+      message: "Address added successfully",
+      data: address,
+    });
+
+  } catch (err) {
+    console.log("============== ERROR ==============");
+    console.log(err);
+    console.log(err.message);
+    console.log(err.stack);
+
+    return res.status(500).json({
+      response: "failed",
+      message: err.message,
+    });
+  }
+};
+
+/* ================= GET USER ADDRESSES ================= */
+const getAddresses = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const addresses = await Address.find({ user: userId });
+
+    return res.status(200).json({
+      response: "success",
+      data: addresses,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      response: "failed",
+      message: err.message,
+    });
+  }
+};
+
+
+const updateAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    const address = await Address.findOne({
+      _id: id,
+      user: userId,
+    });
+
+    if (!address) {
+      return res.status(404).json({
+        response: "failed",
+        message: "Address not found",
+      });
+    }
+
+    Object.assign(address, req.body);
+
+    if (req.body.latitude && req.body.longitude) {
+      address.location = {
+        type: "Point",
+        coordinates: [
+          req.body.longitude,
+          req.body.latitude,
+        ],
+      };
+    }
+
+    await address.save();
+
+    return res.status(200).json({
+      response: "success",
+      message: "Address updated successfully",
+      data: address,
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      response: "failed",
+      message: err.message,
+    });
+  }
+};
+
+/* ================= DELETE ADDRESS ================= */
+const deleteAddress = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Address.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      response: "success",
+      message: "Address deleted",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      response: "failed",
+      message: err.message,
+    });
+  }
+};
+
+/* ================= SET DEFAULT ADDRESS ================= */
+const setDefaultAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    await Address.updateMany(
+      { user: userId },
+      { isDefault: false }
+    );
+
+    const updated = await Address.findByIdAndUpdate(
+      id,
+      { isDefault: true },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      response: "success",
+      message: "Default address updated",
+      data: updated,
+    });
+  } catch (err) {
     return res.status(500).json({
       response: "failed",
       message: err.message,
@@ -551,55 +714,51 @@ const getProductByCategoryName = async (req, res) => {
   }
 };
 
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/%/g, "percent")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
 const getProductbyProductName = async (req, res) => {
   try {
     const { product_name } = req.params;
 
-    if (!product_name) {
-      return res.status(400).json({
-        message: "Product name is required",
-        response: "failed",
-      });
-    }
+    const slug = decodeURIComponent(product_name);
 
-    // URL slug -> normal name
-    const normalizedName = decodeURIComponent(product_name)
-      .trim()
-      .replace(/-/g, " ")
-      .replace(/\s+/g, " ");
+    const products = await Product.find();
 
-    // regex safe
-    const escapedName = normalizedName.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      "\\$&"
-    );
+    console.log("Incoming Slug:", slug);
 
-    const product = await Product.findOne({
-      name: {
-        $regex: `^${escapedName}$`,
-        $options: "i",
-      },
+    const product = products.find((p) => {
+      const dbSlug = slugify(p.name);
+
+      console.log(dbSlug);
+
+      return dbSlug === slug;
     });
 
     if (!product) {
       return res.status(404).json({
-        message: "Product not found",
         response: "failed",
+        message: "Product not found",
       });
     }
 
-    return res.status(200).json({
-      message: "Product fetched successfully",
+    return res.json({
       response: "success",
       data: product,
     });
+
   } catch (err) {
-    console.error("Get Product Error:", err);
+    console.log(err);
 
     return res.status(500).json({
-      message: "Server error",
       response: "failed",
-      error: err.message,
+      message: err.message,
     });
   }
 };
@@ -914,12 +1073,14 @@ const createOrder = async (req, res) => {
       items,
       shipping = 0,
       couponCode,
-      discount = 0, // ✅ ye sahi hai
+      discount = 0,
       paymentMode,
-      address,
+      addressId,
+      email,
     } = req.body;
 
-    // ✅ VALIDATION
+    // ================= VALIDATION =================
+
     if (!user_id) {
       return res.status(400).json({
         message: "User ID is required",
@@ -934,6 +1095,13 @@ const createOrder = async (req, res) => {
       });
     }
 
+    if (!addressId) {
+      return res.status(400).json({
+        message: "Address is required",
+        response: "failed",
+      });
+    }
+
     if (!items || items.length === 0) {
       return res.status(400).json({
         message: "Items are required",
@@ -941,7 +1109,22 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // ✅ BUILD ITEMS
+    // ================= GET ADDRESS =================
+
+    const selectedAddress = await Address.findOne({
+      _id: addressId,
+      user: user_id,
+    });
+
+    if (!selectedAddress) {
+      return res.status(404).json({
+        message: "Address not found",
+        response: "failed",
+      });
+    }
+
+    // ================= BUILD ITEMS =================
+
     let formattedItems = [];
     let totalPrice = 0;
     let itemQuantity = 0;
@@ -955,121 +1138,218 @@ const createOrder = async (req, res) => {
           response: "failed",
         });
       }
+      // ================= GET SELECTED VARIANT =================
 
-      if (item.quantity > product.stock) {
-        return res.status(400).json({
-          message: `Only ${product.stock} items available`,
-          response: "failed",
-        });
-      }
+let selectedVariant = null;
 
-      const discounted = product.discountedPrice || product.price;
+if (item.variant_id) {
+  selectedVariant = product.variants.id(item.variant_id);
+
+  if (!selectedVariant) {
+    return res.status(404).json({
+      message: "Selected variant not found",
+      response: "failed",
+    });
+  }
+}
+
+    // ================= CHECK STOCK =================
+
+if (selectedVariant) {
+  if (item.quantity > selectedVariant.quantity) {
+    return res.status(400).json({
+      message: `Only ${selectedVariant.quantity} items available`,
+      response: "failed",
+    });
+  }
+} else {
+  if (item.quantity > product.quantity) {
+    return res.status(400).json({
+      message: `Only ${product.quantity} items available`,
+      response: "failed",
+    });
+  }
+}
+
+      // ================= PRICE =================
+
+const price = selectedVariant
+  ? selectedVariant.price
+  : product.price;
+
+const discounted = selectedVariant
+  ? (selectedVariant.discountedPrice || selectedVariant.price)
+  : (product.discountedPrice || product.price);
+
       const itemTotal = discounted * item.quantity;
 
       formattedItems.push({
-        product_id: product._id,
-        product_name: product.name,
-        category: product.category,
-        subcategory: product.subcategory,
-        price: product.price,
-        discountedPrice: discounted,
-        itemTotalPrice: itemTotal,
-        image: product.images?.[0] || "",
-        quantity: item.quantity,
-      });
+  product_id: product._id,
+  variant_id: selectedVariant?._id || null,
+
+variant_title: selectedVariant?.title || "",
+
+isVariant: !!selectedVariant,
+  product_name: product.name,
+  category: product.category,
+  subcategory: product.sub_category, // agar schema me sub_category hai
+ price: price,
+  discountedPrice: discounted,
+  itemTotalPrice: itemTotal,
+
+ image:
+  selectedVariant &&
+  !selectedVariant.useProductImages &&
+  selectedVariant.images?.length
+    ? {
+        url: selectedVariant.images[0].url,
+        public_id: selectedVariant.images[0].public_id,
+      }
+    : {
+        url: product.images?.[0]?.url || "",
+        public_id: product.images?.[0]?.public_id || "",
+      },
+
+  quantity: item.quantity,
+});
 
       totalPrice += itemTotal;
       itemQuantity += item.quantity;
     }
 
-    const tax = totalPrice * 0.18;
+    const finalTotal = totalPrice + shipping - discount;
 
-    const finalTotal = totalPrice + tax - discount + shipping; // ✅ FINAL TOTAL
+    // ================= DELIVERY DETAILS =================
 
-    // 🔥 ================================
-    // 🔥 RAZORPAY LOGIC START
-    // 🔥 ================================
+const expectedDelivery = new Date();
+expectedDelivery.setDate(expectedDelivery.getDate() + 5); // 5 days delivery
+
+    // ================= ORDER ADDRESS =================
+
+    const orderAddress = {
+      addressId: selectedAddress._id,
+
+      fullName: selectedAddress.name,
+
+      mobile: selectedAddress.mobile,
+
+      email: email || "",
+
+      addressLine: selectedAddress.addressLine,
+
+      landmark: selectedAddress.landmark,
+
+      district: selectedAddress.district,
+
+      city: selectedAddress.city,
+
+      state: selectedAddress.state,
+
+      country: selectedAddress.country,
+
+      pincode: selectedAddress.pincode,
+    };
+
+    // ================= ONLINE =================
 
     if (paymentMode === "ONLINE") {
-      const options = {
+      const razorpayOrder = await razorpay.orders.create({
         amount: Math.round(finalTotal * 100),
-
         currency: "INR",
         receipt: `order_rcptid_${Date.now()}`,
-      };
-
-      const razorpayOrder = await razorpay.orders.create(options);
-
-      // ✅ Save order with pending payment
-      const newOrder = await Order.create({
-        fullName,
-        mobile,
-        user_id,
-        items: formattedItems,
-        totalPrice: finalTotal,
-        itemQuantity,
-        shipping,
-        couponCode,
-        couponDiscount: discount,
-        paymentMode,
-        address,
-        paymentStatus: "pending",
-        razorpayOrderId: razorpayOrder.id,
       });
+
+     const newOrder = await Order.create({
+  fullName,
+  mobile,
+  user_id,
+
+  items: formattedItems,
+
+  totalPrice: finalTotal,
+
+  itemQuantity,
+
+  shipping,
+
+  couponCode,
+
+  couponDiscount: discount,
+
+  paymentMode,
+
+  address: orderAddress,
+
+  paymentStatus: "pending",
+
+  razorpayOrderId: razorpayOrder.id,
+
+  deliveryStatus: "Pending",
+
+  expectedDelivery,
+
+  deliveryTimeline: [
+    {
+      status: "Pending",
+      message: "Order placed successfully.",
+    },
+  ],
+});
 
       return res.status(200).json({
         message: "Razorpay order created",
         response: "success",
         razorpayOrder,
         order: newOrder,
-        key: process.env.RAZORPAY_KEY_ID, // frontend ke liye
+        key: process.env.RAZORPAY_KEY_ID,
       });
     }
 
-    // 🔥 ================================
-    // 🔥 COD FLOW
-    // 🔥 ================================
+    // ================= COD =================
 
-    const newOrder = await Order.create({
-      fullName,
-      mobile,
-      user_id,
-      items: formattedItems,
-      totalPrice: finalTotal,
-      itemQuantity,
-      shipping,
-      couponCode,
-      couponDiscount: discount,
-      paymentMode,
-      address,
-      paymentStatus: "pending",
-    });
+   const newOrder = await Order.create({
+  fullName,
+  mobile,
+  user_id,
 
-    // ✅ EMAIL (COD only)
-    try {
-      if (paymentMode === "COD" && address?.email) {
-        const subject = `Order Confirmed #${newOrder._id}`;
+  items: formattedItems,
 
-        const orderText = `
-          Hello ${fullName},
-          Your order has been placed successfully.
-          Order ID: ${newOrder._id}
-          Total: ₹${finalTotal}
-        `;
+  totalPrice: finalTotal,
 
-        // await sendMail(address.email, subject, orderText);
-      }
-    } catch (err) {
-      console.log("Mail error:", err.message);
-    }
+  itemQuantity,
+
+  shipping,
+
+  couponCode,
+
+  couponDiscount: discount,
+
+  paymentMode,
+
+  address: orderAddress,
+
+  paymentStatus: "pending",
+
+  deliveryStatus: "Pending",
+
+  expectedDelivery,
+
+  deliveryTimeline: [
+    {
+      status: "Pending",
+      message: "Order placed successfully.",
+    },
+  ],
+});
 
     return res.status(201).json({
       message: "Order created successfully",
       response: "success",
       order: newOrder,
     });
+
   } catch (error) {
-    console.error("Create Order Error:", error);
+    console.error(error);
 
     return res.status(500).json({
       message: "Server Error",
@@ -1358,15 +1638,40 @@ const updatePaymentStatus = async (req, res) => {
     }
 
     // ✅ 3. Reduce Product Stock (NO package_size)
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.product_id,
-        {
-          $inc: { quantity: -item.quantity },
+   for (const item of order.items) {
+
+  // ================= Variant Product =================
+  if (item.isVariant && item.variant_id) {
+
+    await Product.findOneAndUpdate(
+      {
+        _id: item.product_id,
+        "variants._id": item.variant_id,
+      },
+      {
+        $inc: {
+          "variants.$.quantity": -item.quantity,
         },
-        { new: true },
-      );
-    }
+      }
+    );
+
+  }
+
+  // ================= Normal Product =================
+  else {
+
+    await Product.findByIdAndUpdate(
+      item.product_id,
+      {
+        $inc: {
+          quantity: -item.quantity,
+        },
+      }
+    );
+
+  }
+
+}
 
     // ✅ 4. Apply coupon usage AFTER success
     if (order.couponCode) {
@@ -1448,6 +1753,42 @@ const updatePaymentStatus = async (req, res) => {
     return res.status(500).json({
       message: "Server Error",
       response: "failed",
+    });
+  }
+};
+
+
+
+// ================= Get All Banners =================
+const getBanners = async (req, res) => {
+  try {
+    const banners = await Banner.find({
+      isActive: true,
+    }).sort({
+      displayOrder: 1,
+      createdAt: -1,
+    });
+
+    if (!banners || banners.length === 0) {
+      return res.status(404).json({
+        message: "No Banners found",
+        response: "failed",
+        banners: [],
+      });
+    }
+
+    res.status(200).json({
+      message: "Banners retrieved successfully",
+      response: "success",
+      banners,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to fetch Banners",
+      response: "failed",
+      error: err.message,
     });
   }
 };
@@ -2145,13 +2486,10 @@ module.exports = {
   getAllOrders,
   getOrdersByUser,
   updatePaymentStatus,
-
   applyDiscount,
   getCarousels,
   getReel,
-
   searchProducts,
-
   addSubscriber,
   changePassword,
   createTransaction,
@@ -2163,4 +2501,10 @@ module.exports = {
   getFeaturedCollections,
   getCollectionBySlug,
   updateProfile,
+  addAddress,
+  getAddresses,
+  deleteAddress,
+  setDefaultAddress,
+  updateAddress,
+    getBanners,
 };

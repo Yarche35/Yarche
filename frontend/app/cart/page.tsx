@@ -11,10 +11,29 @@ import {
     Truck,
     BadgeCheck,
 } from "lucide-react";
+import { useAuthStore } from "@/src/store/authStore";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";// ya sonner use kar rahe ho to sonner
 
 import { useCartStore } from "@/src/store/cartStore";
 
+
+
 export default function CartPage() {
+    const router = useRouter();
+
+    const user = useAuthStore((state) => state.user);
+
+    const handleCheckout = () => {
+        if (!user) {
+            toast.error("Please login first");
+
+            router.push("/auth/login");
+            return;
+        }
+
+        router.push("/checkout");
+    };
     const {
         items,
         removeFromCart,
@@ -27,7 +46,7 @@ export default function CartPage() {
         0
     );
 
-    const shipping = subtotal >= 500 ? 0 : 50;
+    const shipping = subtotal >= 899 ? 0 : 49;
     const freeShippingTarget = 500;
 
     const total = subtotal + shipping;
@@ -69,7 +88,7 @@ export default function CartPage() {
     }
 
     return (
-        <section className="bg-[#f3e7d3] min-h-screen py-10">
+        <section className="bg-[var(--background)] py-20] min-h-screen py-10">
             <div className="max-w-[1600px] mx-auto px-4">
 
                 {/* HEADER */}
@@ -90,8 +109,8 @@ export default function CartPage() {
 
                         {items.map((item) => (
                             <div
-                                key={item._id}
-                                className="bg-[#ead7b8] rounded-[30px] border border-[#d8c2a0] p-5 shadow-md"
+                                key={`${item._id}-${item.variant_id || "default"}`}
+                                className=" bg-[var(--background)] rounded-[30px] border border-[#d8c2a0] p-5 shadow-md"
                             >
                                 <div className="flex flex-col md:flex-row gap-5">
 
@@ -105,15 +124,13 @@ export default function CartPage() {
 
                                     <div className="flex-1">
 
-                                        <h3 className="text-2xl font-bold text-[#3F2A1D]">
-                                            {item.name}
-                                        </h3>
+                                       <h3 className="text-2xl font-bold text-[#3F2A1D]">
+    {item.isVariant && item.title
+        ? item.title
+        : item.name}
+</h3>
 
-                                        {item.title && (
-                                            <p className="text-sm text-[#6f5f52] mt-1">
-                                                {item.title}
-                                            </p>
-                                        )}
+                                       
 
                                         <div className="mt-4 flex items-center gap-3">
                                             <span className="text-3xl font-extrabold text-[#2D1A10]">
@@ -131,9 +148,14 @@ export default function CartPage() {
                                         {/* QUANTITY CONTROLS */}
                                         <div className="mt-6 flex items-center justify-between">
 
-                                            <div className="flex items-center overflow-hidden rounded-2xl border border-[#cbb28f] bg-[#e8d2ae]">
+                                            <div className="flex items-center overflow-hidden rounded-2xl border border-[#cbb28f]  bg-[var(--surface)]">
                                                 <button
-                                                    onClick={() => decreaseQty(item._id)}
+                                                    onClick={() =>
+                                                        decreaseQty(
+                                                            item._id,
+                                                            item.variant_id || null
+                                                        )
+                                                    }
                                                     className="w-12 h-12 flex items-center justify-center"
                                                 >
                                                     <Minus size={18} />
@@ -145,7 +167,12 @@ export default function CartPage() {
 
                                                 <button
                                                     disabled={item.quantity >= item.stock}
-                                                    onClick={() => increaseQty(item._id)}
+                                                    onClick={() =>
+                                                        increaseQty(
+                                                            item._id,
+                                                            item.variant_id || null
+                                                        )
+                                                    }
                                                     className={`w-12 h-12 flex items-center justify-center transition
                                                         ${item.quantity >= item.stock
                                                             ? "opacity-40 cursor-not-allowed"
@@ -157,7 +184,12 @@ export default function CartPage() {
                                             </div>
 
                                             <button
-                                                onClick={() => removeFromCart(item._id)}
+                                                onClick={() =>
+                                                    removeFromCart(
+                                                        item._id,
+                                                        item.variant_id || null
+                                                    )
+                                                }
                                                 className="w-12 h-12 rounded-xl bg-[#e3c1b8] text-[#7a2e2e] flex items-center justify-center"
                                             >
                                                 <Trash2 size={18} />
@@ -180,21 +212,21 @@ export default function CartPage() {
                     {/* RIGHT SIDE SUMMARY */}
                     <div className="sticky top-24">
 
-                        <div className="bg-[#ead7b8] border border-[#d8c2a0] rounded-[34px] p-7 shadow-xl">
+                        <div className="bg-[var(--background)] border border-bg-[var(--footer)] rounded-[34px] p-7 shadow-xl">
 
                             <h2 className="text-2xl font-bold text-[#3B281C]">
                                 Order Summary
                             </h2>
 
                             {/* DELIVERY PROGRESS */}
-                            <div className="mt-6 bg-[#e0caa8] rounded-2xl p-4">
+                            <div className="mt-6 bg-[var(--surface)] rounded-2xl p-4">
 
                                 <div className="flex justify-between text-sm mb-2">
                                     <span>Free Delivery Progress</span>
                                     <span>{Math.round(progress)}%</span>
                                 </div>
 
-                                <div className="h-3 bg-[#d8c2a0] rounded-full overflow-hidden">
+                                <div className="h-3 bg-[var(--surface)] rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-[#3B281C]"
                                         style={{ width: `${progress}%` }}
@@ -215,17 +247,17 @@ export default function CartPage() {
                             {/* ICON FEATURES */}
                             <div className="grid grid-cols-3 gap-3 mt-5">
 
-                                <div className="bg-[#e0caa8] rounded-2xl p-3 text-center">
+                                <div className="bg-[var(--surface)] rounded-2xl p-3 text-center">
                                     <Truck size={20} className="mx-auto text-[#3B281C]" />
                                     <p className="text-xs mt-2">Fast Delivery</p>
                                 </div>
 
-                                <div className="bg-[#e0caa8] rounded-2xl p-3 text-center">
+                                <div className="bg-[var(--surface)] rounded-2xl p-3 text-center">
                                     <ShieldCheck size={20} className="mx-auto text-[#3B281C]" />
                                     <p className="text-xs mt-2">Secure</p>
                                 </div>
 
-                                <div className="bg-[#e0caa8] rounded-2xl p-3 text-center">
+                                <div className="bg-[var(--surface)] rounded-2xl p-3 text-center">
                                     <BadgeCheck size={20} className="mx-auto text-[#3B281C]" />
                                     <p className="text-xs mt-2">Quality</p>
                                 </div>
@@ -265,13 +297,13 @@ export default function CartPage() {
                             </div>
 
                             {/* CHECKOUT */}
-                            <Link
-                                href="/checkout"
+                            <button
+                                onClick={handleCheckout}
                                 className="mt-8 h-14 w-full bg-[#2D1A10] text-[#f3e7d3] rounded-2xl font-semibold flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg"
                             >
                                 Proceed To Checkout
                                 <ArrowRight size={18} />
-                            </Link>
+                            </button>
 
                             <div className="flex items-center justify-center gap-2 mt-5 text-[#6f5f52] text-sm">
                                 <ShieldCheck size={14} />

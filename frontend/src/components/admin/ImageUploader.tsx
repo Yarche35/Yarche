@@ -4,12 +4,19 @@ import { Upload, X, ImageIcon } from "lucide-react";
 import { useRef } from "react";
 import { UPLOADS_BASE_URL } from "@/src/lib/constants";
 
+interface ExistingImage {
+  url: string;
+  public_id: string;
+}
+
 interface ImageUploaderProps {
   images: File[];
   setImages: React.Dispatch<React.SetStateAction<File[]>>;
 
-  existingImages?: string[];
-  setExistingImages?: React.Dispatch<React.SetStateAction<string[]>>;
+  existingImages?: ExistingImage[];
+  setExistingImages?: React.Dispatch<
+    React.SetStateAction<ExistingImage[]>
+  >;
 
   label?: string;
 }
@@ -60,7 +67,7 @@ export default function ImageUploader({
   return (
     <div className="space-y-4">
       {/* LABEL */}
-      <label className="block text-sm font-medium text-[#28170D]">
+      <label className="block text-sm font-medium text-foreground">
         {label}
       </label>
 
@@ -97,7 +104,7 @@ export default function ImageUploader({
       --------------------------- */}
       {existingImages.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-[#28170D]">
+          <h4 className="text-sm font-medium text-foreground">
             Existing Images
           </h4>
 
@@ -107,11 +114,11 @@ export default function ImageUploader({
                 key={index}
                 className="group relative overflow-hidden rounded-xl border bg-white"
               >
-                <img
-                  src={`${UPLOADS_BASE_URL}${image}`}
-                  alt="existing"
-                  className="h-32 w-full object-cover"
-                />
+               <img
+  src={image.url}
+  alt="existing"
+  className="h-32 w-full object-cover"
+/>
 
                 <button
                   type="button"
@@ -134,7 +141,7 @@ export default function ImageUploader({
       --------------------------- */}
       {images.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-[#28170D]">
+          <h4 className="text-sm font-medium text-foreground">
             New Images
           </h4>
 

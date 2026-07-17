@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { compressImage } from "@/src/lib/compressImage";
 
 import API from "@/src/lib/api";
 
@@ -74,9 +75,14 @@ export default function ProductForm({
   ] = useState<File[]>([]);
 
   const [
-    existingProductImages,
-    setExistingProductImages,
-  ] = useState<string[]>([]);
+  existingProductImages,
+  setExistingProductImages,
+] = useState<
+  {
+    url: string;
+    public_id: string;
+  }[]
+>([]);
 
   // Variant Images
 
@@ -87,12 +93,18 @@ export default function ProductForm({
     {}
   );
 
-  const [
-    existingVariantImages,
-    setExistingVariantImages,
-  ] = useState<
-    Record<number, string[]>
-  >({});
+ const [
+  existingVariantImages,
+  setExistingVariantImages,
+] = useState<
+  Record<
+    number,
+    {
+      url: string;
+      public_id: string;
+    }[]
+  >
+>({});
 
   useEffect(() => {
     if (!initialData) return;
@@ -120,11 +132,11 @@ export default function ProductForm({
       quantity: initialData.quantity || 0,
 
       variants:
-  initialData.variants?.map((v: any) => ({
-    ...v,
-    useProductImages:
-      v.useProductImages ?? true,
-  })) || [],
+        initialData.variants?.map((v: any) => ({
+          ...v,
+          useProductImages:
+            v.useProductImages ?? true,
+        })) || [],
     });
 
     setExistingProductImages(
@@ -132,9 +144,12 @@ export default function ProductForm({
     );
 
     const variantImageMap: Record<
-      number,
-      string[]
-    > = {};
+  number,
+  {
+    url: string;
+    public_id: string;
+  }[]
+> = {};
 
     (
       initialData.variants || []
@@ -144,7 +159,7 @@ export default function ProductForm({
         index: number
       ) => {
         variantImageMap[index] =
-          variant.images || [];
+  variant.images || [];
       }
     );
 
@@ -232,43 +247,54 @@ export default function ProductForm({
 
       // Product Images
 
-      productImages.forEach(
-        (file) => {
-          fd.append(
-            "productImages",
-            file
-          );
-        }
-      );
+     // Product Images (Compressed)
+
+for (const file of productImages) {
+  const compressedFile = await compressImage(file);
+
+  console.log(
+    "Original:",
+    (file.size / 1024 / 1024).toFixed(2),
+    "MB"
+  );
+
+  console.log(
+    "Compressed:",
+    (compressedFile.size / 1024).toFixed(0),
+    "KB"
+  );
+
+  fd.append("productImages", compressedFile);
+}
 
       // Variant Images
 
-      Object.entries(variantImages).forEach(
-        ([index, files]) => {
-          files.forEach((file) => {
-            fd.append(
-              `variantImages_${index}`,
-              file
-            );
-          });
-        }
-      );
+      for (const [index, files] of Object.entries(variantImages)) {
+  for (const file of files) {
+    const compressedFile = await compressImage(file);
+
+    fd.append(
+      `variantImages_${index}`,
+      compressedFile
+    );
+  }
+}
 
       // ===== DEBUG START =====
 
-console.log("PRODUCT IMAGES STATE");
-console.log(productImages);
+      console.log("PRODUCT IMAGES STATE");
+      console.log(productImages);
 
-console.log("VARIANT IMAGES STATE");
-console.log(variantImages);
+      console.log("VARIANT IMAGES STATE");
+      console.log(variantImages);
 
-console.log("FORMDATA CONTENT");
+      console.log("FORMDATA CONTENT");
 
-for (const pair of fd.entries()) {
-  console.log(pair[0], pair[1]);
-}
+      for (const pair of fd.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
-// ===== DEBUG END =====
+      // ===== DEBUG END =====
 
 
       if (isEdit) {
@@ -421,7 +447,7 @@ for (const pair of fd.entries()) {
           disabled={loading}
           className="
             rounded-xl
-            bg-[#28170D]
+            bg-footer
             px-6 py-3
             text-white
             disabled:opacity-50

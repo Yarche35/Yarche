@@ -5,6 +5,11 @@ import { Trash2 } from "lucide-react";
 import ImageUploader from "@/src/components/admin/ImageUploader";
 import { Variant } from "./types";
 
+type ImageType = {
+  url: string;
+  public_id: string;
+};
+
 type Props = {
   index: number;
 
@@ -21,11 +26,14 @@ type Props = {
     React.SetStateAction<File[]>
   >;
 
-  existingImages: string[];
-  setExistingImages: React.Dispatch<
-    React.SetStateAction<string[]>
-  >;
+  existingImages: ImageType[];
+
+setExistingImages: React.Dispatch<
+  React.SetStateAction<ImageType[]>
+>;
 };
+
+
 
 export default function VariantCard({
   index,
@@ -54,7 +62,7 @@ export default function VariantCard({
       {/* Header */}
 
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[#28170D]">
+        <h3 className="text-lg font-semibold text-foreground">
           Variant #{index + 1}
         </h3>
 
@@ -232,46 +240,46 @@ export default function VariantCard({
       </div>
 
       <div className="mt-6">
-  <label className="flex items-center gap-3">
-    <input
-      type="checkbox"
-      checked={
-        variant.useProductImages ?? true
-      }
-      onChange={(e) =>
-        updateField(
-          "useProductImages",
-          e.target.checked
-        )
-      }
-    />
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={
+              variant.useProductImages ?? true
+            }
+            onChange={(e) =>
+              updateField(
+                "useProductImages",
+                e.target.checked
+              )
+            }
+          />
 
-    <span className="text-sm font-medium">
-      Use Product Images
-    </span>
-  </label>
+          <span className="text-sm font-medium">
+            Use Product Images
+          </span>
+        </label>
 
-  <p className="mt-1 text-xs text-gray-500">
-    If checked, this variant will
-    automatically use product images.
-  </p>
-</div>
+        <p className="mt-1 text-xs text-gray-500">
+          If checked, this variant will
+          automatically use product images.
+        </p>
+      </div>
 
       {/* Images */}
 
       {!variant.useProductImages && (
-  <div className="mt-8">
-    <ImageUploader
-      label={`Variant ${index + 1} Images`}
-      images={images}
-      setImages={setImages}
-      existingImages={existingImages}
-      setExistingImages={
-        setExistingImages
-      }
-    />
-  </div>
-)}
+        <div className="mt-8">
+          <ImageUploader
+            label={`Variant ${index + 1} Images`}
+            images={images}
+            setImages={setImages}
+            existingImages={existingImages}
+            setExistingImages={
+              setExistingImages
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }
