@@ -1,4 +1,6 @@
+
 require("dotenv").config();
+
 const express = require("express");
 const router = require("./router");
 const adminRouter = require("./router/adminRoute");
@@ -9,30 +11,45 @@ const { initSocket } = require("./socket/socket");
 
 const app = express();
 
-// Static folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// CORS configuration
+const allowedOrigins = [
+  "https://yarche-six.vercel.app",
+  "https://yarche-frontend.vercel.app",
+  "http://localhost:3000",
+  "http://10.45.11.215:3000",
+  "http://192.168.1.39:8081",
+];
 
-// DB connect
-db();
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log("Blocked CORS Origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "adminauthorization",
+  ],
+  credentials: true,
+};
 
-// Middleware
+// CORS must run before routes
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// ✅ ONLY YOUR FRONTEND IP
+// Static folder
 app.use(
-  cors({
-    origin: [
-      "https://yarche-six.vercel.app/",
-      "https://yarche-frontend.vercel.app",
-      "http://localhost:3000",
-      "http://10.45.11.215:3000",
-      "http://192.168.1.39:8081",
-    ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "adminauthorization"],
-    credentials: true,
-  }),
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
 );
+
+// Database
+db();
 
 // Routes
 app.use(router);
@@ -40,8 +57,6 @@ app.use("/admin", adminRouter);
 
 // Server start
 const PORT = process.env.PORT || 5000;
-
-// 🔥 IMPORTANT
 
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
