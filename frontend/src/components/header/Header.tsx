@@ -18,91 +18,102 @@ export default function Header() {
 
   const cartItems = useCartStore((state) => state.items);
 
-  const [categories, setCategories] = useState<string[]>([]);
+const [categories, setCategories] = useState<any[]>([]);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const navLinks = [
     { name: "Best Sellers", href: "/best-sellers" },
     { name: "New Arrivals", href: "/new-arrivals" },
-    
-    { name: "Happy Customers", href: "/customers" },
+
+
     { name: "Get Support", href: "/support" },
-    { name: "Our Story", href: "/story" },
+    { name: "Our Story", href: "/our-story" },
   ];
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await API.get("/productcategories");
+ 
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await API.get("/productcategories");
 
-        const data =
-          res.data?.data?.map(
-            (item: any) => item.category
-          ) || [];
+      const data =
+        res.data?.data || [];
 
-        setCategories(data);
+      setCategories(data);
+    } catch (error) {
+      console.error("Category Error:", error);
+    }
+  };
 
-      } catch (error) {
-        console.error("Category Error:", error);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  fetchCategories();
+}, []);
 
 
   return (
     <>
       <header
-        className="
+        className={`
           w-full
           bg-background
           sticky
           top-0
           z-[1000]
           border-b
-          border-[#28170D]/10
-        "
+          border-foreground/10
+          transition-shadow
+          duration-300
+          ${scrolled ? "shadow-[0_6px_24px_rgba(40,23,13,0.08)]" : ""}
+        `}
       >
         <div className="max-w-[1440px] mx-auto">
 
           <TopBar
-            user={user}
-            logout={logout}
-            cartItems={cartItems}
-            setShowSearch={setShowSearch}
-            setIsDrawerOpen={setIsDrawerOpen}
-          />
+  user={user}
+  logout={logout}
+  cartItems={cartItems}
+  setShowSearch={setShowSearch}
+  setIsDrawerOpen={setIsDrawerOpen}
+  categories={categories}
+/>
 
 
           {/* Navbar only */}
           <DesktopNav
-  categories={categories}
-  navLinks={navLinks}
-/>
+            categories={categories}
+            navLinks={navLinks}
+          />
 
         </div>
 
 
-        <MobileSearch
-          showSearch={showSearch}
-          setShowSearch={setShowSearch}
-        />
-
-
-       <MobileDrawer
-  user={user}
-  logout={logout}
-  isDrawerOpen={isDrawerOpen}
-  setIsDrawerOpen={setIsDrawerOpen}
-  showCategories={showCategories}
-  setShowCategories={setShowCategories}
+       <MobileSearch
+  showSearch={showSearch}
+  setShowSearch={setShowSearch}
   categories={categories}
-  navLinks={navLinks}
 />
+
+
+        <MobileDrawer
+          user={user}
+          logout={logout}
+          isDrawerOpen={isDrawerOpen}
+          setIsDrawerOpen={setIsDrawerOpen}
+          showCategories={showCategories}
+          setShowCategories={setShowCategories}
+          categories={categories}
+          navLinks={navLinks}
+        />
 
       </header>
     </>

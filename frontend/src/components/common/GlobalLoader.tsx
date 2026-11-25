@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useLoadingStore } from "@/src/store/loadingStore";
 
 export default function GlobalLoader() {
@@ -9,25 +8,23 @@ export default function GlobalLoader() {
   if (!loading) return null;
 
   return (
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-white/85 backdrop-blur-sm">
-      <div className="relative flex items-center justify-center">
-
-        {/* Rotating Ring */}
-        <div className="loader-ring" />
-
-        {/* Logo Circle */}
-        <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl">
-          <Image
-            src="/logo3.png"
-            alt="Loading"
-            width={52}
-            height={52}
-            priority
-            className="object-contain"
-          />
-        </div>
-
-      </div>
+    <div
+      className="fixed inset-0 z-[999999] flex items-center justify-center"
+      style={{ background: "var(--background)" }}
+      role="status"
+      aria-live="polite"
+      aria-label="Loading"
+    >
+      {/* Yarche logo only (no text) */}
+      <img
+        src="/logo5.png"
+        alt="Yarche"
+        width={160}
+        height={160}
+        decoding="async"
+        className="yc-logo-loader w-32 h-32 sm:w-40 sm:h-40 object-contain select-none"
+        draggable={false}
+      />
     </div>
   );
 }

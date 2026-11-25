@@ -6,11 +6,19 @@ const API = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Full-screen logo loader is only for actions (login, order, payment...).
+// Normal page data (GET) never blocks the screen - pages show their own
+// skeletons, so the website opens instantly.
+const showsGlobalLoader = (config: any) =>
+  !config?.skipLoader && (config?.method || "get").toLowerCase() !== "get";
+
 // ================= REQUEST INTERCEPTOR =================
 API.interceptors.request.use(
   (config) => {
-    // Start Global Loader
-    useLoadingStore.getState().startLoading();
+    // Start Global Loader (skipped for silent background requests)
+    if (showsGlobalLoader(config)) {
+      useLoadingStore.getState().startLoading();
+    }
 
     if (typeof window !== "undefined") {
       // User token OR Admin token
@@ -18,18 +26,9 @@ API.interceptors.request.use(
         localStorage.getItem("token") ||
         localStorage.getItem("adminToken");
 
-      console.log("🔥 TOKEN FROM STORAGE:", token);
-
       if (token) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
-
-        console.log(
-          "🔥 AUTH HEADER SET:",
-          config.headers.Authorization
-        );
-      } else {
-        console.log("❌ NO TOKEN FOUND");
       }
     }
 
@@ -46,25 +45,16 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => {
     // Stop Global Loader
-    useLoadingStore.getState().stopLoading();
-
-    console.log("✅ RESPONSE SUCCESS:", response.config.url);
+    if (showsGlobalLoader(response.config)) {
+      useLoadingStore.getState().stopLoading();
+    }
 
     return response;
   },
   (error) => {
     // Stop Global Loader
-    useLoadingStore.getState().stopLoading();
-
-    console.log("❌ RESPONSE ERROR:", {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.response?.data,
-    });
-
-    // Optional: logout on invalid token
-    if (error.response?.status === 401) {
-      console.log("⚠️ Unauthorized request");
+    if (showsGlobalLoader(error?.config)) {
+      useLoadingStore.getState().stopLoading();
     }
 
     return Promise.reject(error);

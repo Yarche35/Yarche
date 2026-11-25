@@ -9,14 +9,21 @@ import ProductInfo from "@/src/components/product/ProductInfo";
 import ProductTabs from "@/src/components/product/ProductTabs";
 import RelatedProducts from "@/src/components/product/RelatedProducts";
 import Loader from "@/src/components/common/Loader";
+import {
+  getCachedProduct,
+  setCachedProduct,
+} from "@/src/lib/productCache";
 
 export default function ProductDetailsPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const [product, setProduct] = useState<any>(null);
+  // Open instantly if the product is already known (clicked from a card)
+  const [product, setProduct] = useState<any>(() =>
+    getCachedProduct(slug)
+  );
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !getCachedProduct(slug));
   const [related, setRelated] = useState<any[]>([]);
 
   useEffect(() => {
@@ -26,18 +33,26 @@ export default function ProductDetailsPage() {
   }, [slug]);
 
   const fetchProduct = async () => {
-    try {
-      setLoading(true);
+    const cached = getCachedProduct(slug);
 
-     const res = await API.get(
-  `/productbyname/${encodeURIComponent(slug)}`
-);
+    try {
+      // Nothing cached -> show skeleton. Cached -> page is already visible,
+      // refresh silently in the background.
+      if (!cached) setLoading(true);
+
+      const res = await API.get(
+        `/productbyname/${encodeURIComponent(slug)}`,
+        { skipLoader: !!cached } as any
+      );
 
       if (res.data.response === "success") {
         const data = res.data.data;
 
+        setCachedProduct(decodeURIComponent(slug), data);
         setProduct(data);
-        setSelectedVariant(null);
+
+        // keep user's selected variant on silent refresh
+        if (!cached) setSelectedVariant(null);
 
         if (data?.category) {
           fetchRelated(data.category, data._id);
@@ -47,7 +62,7 @@ export default function ProductDetailsPage() {
       }
     } catch (error) {
       console.log(error);
-      setProduct(null);
+      if (!cached) setProduct(null);
     } finally {
       setLoading(false);
     }
@@ -58,8 +73,10 @@ export default function ProductDetailsPage() {
     productId: string
   ) => {
     try {
+      // Related products load silently (no full-screen loader)
       const res = await API.get(
-        `/products?category=${encodeURIComponent(category)}`
+        `/products?category=${encodeURIComponent(category)}`,
+        { skipLoader: true } as any
       );
 
       if (res.data.response === "success") {
@@ -87,12 +104,12 @@ export default function ProductDetailsPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="bg-[#f5e6c6] border border-[#28170D]/10 rounded-[24px] md:rounded-[30px] p-6 md:p-8 text-center max-w-md w-full">
+        <div className="bg-warning-light border border-foreground/10 rounded-[24px] md:rounded-[30px] p-6 md:p-8 text-center max-w-md w-full">
           <h2 className="text-2xl md:text-3xl font-black text-foreground">
             Product Not Found
           </h2>
 
-          <p className="text-[#6b584b] mt-3 text-sm md:text-base">
+          <p className="text-text-secondary mt-3 text-sm md:text-base">
             The product you are looking for does not exist or may have been
             removed.
           </p>
@@ -165,7 +182,7 @@ export default function ProductDetailsPage() {
                   px-4
                   py-2
                   rounded-full
-                  bg-[#FF6E23]
+                  bg-primary
                   text-foreground
                   font-bold
                   text-[11px]
@@ -191,7 +208,7 @@ export default function ProductDetailsPage() {
                 Related Products
               </h2>
 
-              <p className="text-[#6b584b] mt-3 text-sm md:text-base">
+              <p className="text-text-secondary mt-3 text-sm md:text-base">
                 Handpicked products you may also like.
               </p>
             </div>
