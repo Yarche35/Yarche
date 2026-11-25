@@ -22,6 +22,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
+      "https://yarche-six.vercel.app/",
       "https://yarche-frontend.vercel.app",
       "http://localhost:3000",
       "http://10.45.11.215:3000",
